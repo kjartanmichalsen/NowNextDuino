@@ -36,7 +36,6 @@ WiFiManager wifiManager;
  
 const char* host = "www.yr.no";
 String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
-String url2 = "/api/v0/locations/id/1-2255306/forecast/nowDate;"; // Nownexturl
 
 // finding values
 boolean startRead = false;
@@ -50,6 +49,10 @@ String weather1;
 String temperature2;
 String weather2;
 String timefrom;
+
+int rainArray[] = {2, 4, 8, 3, 6, 2, 4, 8, 3, 6, 2, 4, 8, 3, 6};
+
+
 
 int loopCounter=0;
 int displayView=1;
@@ -176,6 +179,7 @@ if(loopCounter==0){
   temperature2 = "";
   weather2 = "";
   timefrom = "";
+
   
 
   displayInfo("connecting to ");
@@ -335,33 +339,105 @@ displayInfo("Laster..");
   displayInfo("closing connection to yr weather");
 
 
-   if (!client.connect(host, httpPort)) {
+/* --------- Now next ------------ */
+
+displayInfo("NowNext");
+
+const char* host3 = "api.met.no";
+//host3 = "d7.no";
+host3 = host;
+String url3 = "/weatherapi/nowcast/0.9/?lat=60.10;lon=9.58";
+url3 = "/sted/Norge/Finnmark/Vardø/Vardø/varsel_nu.xml";
+url3 = "/place/Norway/Oslo/Oslo/Etterstad/varsel_nu.xml";
+//url3 = "/ver/sample.xml";
+
+if (!client.connect(host3, httpPort)) {
     displayInfo("connection failed");
     return;
-  }
+}
   displayInfo("Open connection to now next api");
 
     Serial.print("Requesting URL: ");
-  displayInfo(url2);
+  displayInfo(url3);
   
   // This will send the request to the server
-  client.print(String("GET ") + url2 + " HTTP/1.1\r\n" +
-               "Host: " + host + "\r\n" + 
+  client.print(String("GET ") + url3 + " HTTP/1.1\r\n" +
+               "Host: " + host3 + "\r\n" + 
                "Connection: close\r\n\r\n");
   delay(500);
 
+startRead = false;
+int rainCount = 0;
 
 while(client.available()){
-    String line = client.readStringUntil('\r');
-    displayInfoLong(line);
+    //String line = client.readStringUntil('\r\n');
+    //displayInfo(line);
+
     
-
- 
+    float f;
+    int rm;
     char c = client.read();
-    //displayInfoShort(c);
+    
+      if (c == '<' ) { // Sjekk om vi har starten på en xml node
+        startRead = true; // i såfall, la oss lese inn
+      }
+  
 
+      // leser inn innhold til en streng
+      if(startRead == true){
+          charValue = String(c); // konverter til string
+          tempValue = tempValue + charValue; // legg til string
+          
+          stringPos++;
 
+           if(tempValue.indexOf("value=") > 0)
+            {
+               if (c == '"' && dataValue != "=" ) {
+             
+                displayInfoShort("Fant nedbor:");
+                startRead = false; // slutt å lese
+                displayInfoShort(dataValue); // skriv ut linjen til skjerm
+                tempValue = ""; // nullstill streng
+                stringPos = 0; // Nullstill teller+
+
+                /* ------- Start Handle Values  ------------ */
+
+                f = dataValue.toFloat();
+                f = f * 10;
+                rm = (int) f; 
+
+                rainArray[rainCount] = rm;
+                
+                rainCount++;
+                dataValue = "";
+
+                /* ------- End  Handle Values  ------------ */
+                
+               }else{
+
+                if (c == '"' && dataValue == "=" ){
+                  dataValue="";
+                  }else{
+               
+                  dataValue = dataValue + charValue;
+                }
+               }
+            }
+
+        if (c == '>' ) { // ferdig med en xml-node
+          startRead = false; // slutt å lese
+          displayInfoShort(tempValue); // skriv ut linjen til konsoll
+          tempValue = ""; // nullstill streng
+          stringPos = 0; // Nullstill teller
+        }
+
+      }
 }
+
+/* --------- END Now next ------------ */
+
+
+
 
 
  } //end loopcounter
@@ -415,8 +491,22 @@ if(displayView==4){
     display.setCursor(0,10);
     display.println(""+weather2+"");
     
-      displayView=0;
+
       }
+
+if(displayView==5){
+  int MAX = 12;
+  for (int i = 0; i < MAX; i++ ){
+    display.fillRect((i*5),(48-(rainArray[ i ]*3)), 5,  (rainArray[ i ]*3), BLACK);
+  }
+   display.setTextColor(BLACK);
+   display.setCursor(0,0);
+   display.setTextSize(1);
+   display.println("Regn neste 90");
+  
+  displayView=0;
+}
+      
 
   display.display();
     displayView++;
