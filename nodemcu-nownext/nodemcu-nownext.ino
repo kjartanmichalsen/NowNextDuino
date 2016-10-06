@@ -1,17 +1,16 @@
- /* PINS for nodemcu 0.9 
-static const uint8_t D0   = 16;
-static const uint8_t D1   = 5;
-static const uint8_t D2   = 4;
-static const uint8_t D3   = 0;
-static const uint8_t D4   = 2;
-static const uint8_t D5   = 14;
-static const uint8_t D6   = 12;
-static const uint8_t D7   = 13;
-static const uint8_t D8   = 15;
-static const uint8_t D9   = 3;
-static const uint8_t D10  = 1;
-*/
- 
+ /* PINS for nodemcu 0.9 */
+#define D0 16
+#define D1 5 // I2C Bus SCL (clock)
+#define D2 4 // I2C Bus SDA (data)
+#define D3 0
+#define D4 2 // Same as "LED_BUILTIN", but inverted logic
+#define D5 14 // SPI Bus SCK (clock)
+#define D6 12 // SPI Bus MISO 
+#define D7 13 // SPI Bus MOSI
+#define D8 15 // SPI Bus SS (CS)
+#define D9 3 // RX0 (Serial console)
+#define D10 1 // TX0 (Serial console)
+
 #include <ESP8266WiFi.h>
 
 #include <SPI.h>
@@ -31,13 +30,9 @@ static const uint8_t D10  = 1;
 
 Adafruit_PCD8544 display = Adafruit_PCD8544(2, 0, 4, 5, 16);
 
-
 WiFiManager wifiManager;
- 
-const char* host = "www.yr.no";
-String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
 
-// finding values
+// Setting up data values
 boolean startRead = false;
 int stringPos;
 int stage;
@@ -49,49 +44,31 @@ String weather1;
 String temperature2;
 String weather2;
 String timefrom;
+String outsidetemp;
 
 int rainArray[] = {2, 4, 8, 3, 6, 2, 4, 8, 3, 6, 2, 4, 8, 3, 6};
-
-
 
 int loopCounter=0;
 int displayView=1;
 
+
+
 // Rutine for å skrive ut en melding til skjerm 
 
-void displayInfo(String info){
-  display.clearDisplay();
-    display.setTextSize(1);
+void displayInfo(String info, int seconds){
+    display.clearDisplay();
+    display.setTextSize(2);
+    if(info.length()>16){
+        display.setTextSize(1);
+      }
     display.setTextColor(BLACK);
     display.setCursor(0,0);
     display.println(info);
     display.display();
     Serial.println(info); // skriv ut linjen til konsoll
-    delay(300);
+    delay((seconds*100));
 }
 
-// Rutine for å skrive ut en kort melding til skjerm 
- 
-void displayInfoShort(String info){
-  display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(BLACK);
-    display.setCursor(0,0);
-    display.println(info);
-    display.display();
-    delay(30);
-}
-
-void displayInfoLong(String info){
-  display.clearDisplay();
-    display.setTextSize(1);
-    display.setTextColor(BLACK);
-    display.setCursor(0,0);
-    display.println(info);
-    display.display();
-    Serial.println(info); // skriv ut linjen til konsoll
-    delay(3000);
-}
 
 
 // Definisjon fra yr på værtekst
@@ -147,7 +124,6 @@ void setup() {
   // Gjør klar skjermen
   display.begin();
   
-
   // Endre kontrast 
   display.setContrast(50);
   display.clearDisplay();
@@ -157,8 +133,7 @@ void setup() {
  
   // Koble til med wifi-manager
  
-  displayInfo("Koble til wifi'Netver' og   velg ditt     hjemmenettverk");
-
+  displayInfo("Koble til wifi'Netver' og   velg ditt     hjemmenettverk",1);
   wifiManager.autoConnect("Netver");
 }
 
@@ -180,24 +155,27 @@ if(loopCounter==0){
   weather2 = "";
   timefrom = "";
 
-  
+/* --------- Weather data ------------ */
 
-  displayInfo("connecting to ");
-  displayInfo(host);
+  const char* host = "www.yr.no";
+  String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
+
+  displayInfo("connecting to ",1);
+  displayInfo(host,1);
   
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
   const int httpPort = 80;
   if (!client.connect(host, httpPort)) {
-    displayInfo("connection failed");
+    displayInfo("connection failed",1);
     return;
   }
 
-displayInfo("Laster..");
+displayInfo("Laster..",1);
  
   
   Serial.print("Requesting URL: ");
-  displayInfo(url);
+  displayInfo(url,1);
   
   // This will send the request to the server
   client.print(String("GET ") + url + " HTTP/1.1\r\n" +
@@ -212,13 +190,8 @@ displayInfo("Laster..");
   while(client.available()){
     //String line = client.readStringUntil('\r');
     //Serial.print(line);
-    
-
  
     char c = client.read();
-    //displayInfo(c);
-
-
     
      if (c == '<' ) { // Sjekk om vi har starten på en xml node
         startRead = true; // i såfall, la oss lese inn
@@ -240,10 +213,10 @@ displayInfo("Laster..");
            if(tempValue.indexOf("numberEx=") > 0)
             {
                if (c == '"' && dataValue != "=" ) {
-                displayInfo(tempValue);
-                displayInfo("Fant ver");
+                displayInfo(tempValue,1);
+                displayInfo("Fant ver",1);
                 startRead = false; // slutt å lese
-                displayInfo(dataValue); // skriv ut linjen til skjerm
+                displayInfo(dataValue,1); // skriv ut linjen til skjerm
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
                 
@@ -265,9 +238,9 @@ displayInfo("Laster..");
           if(tempValue.indexOf("temperature") > 0 && stringPos > 35)
             {
                if (c == '"' ) {
-                displayInfo("Fant grader");
+                displayInfo("Fant grader",1);
                 startRead = false; // slutt å lese
-                displayInfo("dataValue: "+dataValue); // skriv ut linjen til skjerm
+                displayInfo("dataValue: "+dataValue,1); // skriv ut linjen til skjerm
 
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
@@ -283,9 +256,9 @@ displayInfo("Laster..");
          if(tempValue.indexOf("time from=") > 0 && stringPos > 23 && weather1!="" && timefrom=="")
             {
                if (stringPos == 26 ) {
-                displayInfo("Fant tidsinterval");
+                displayInfo("Fant tidsinterval",1);
                 startRead = false; // slutt å lese
-                displayInfo("dataValue: "+dataValue); // skriv ut linjen til skjerm
+                displayInfo("dataValue: "+dataValue,1); // skriv ut linjen til skjerm
 
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
@@ -300,7 +273,7 @@ displayInfo("Laster..");
         
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfoShort(tempValue); // skriv ut linjen til konsoll
+          //displayInfo(tempValue,1); // DEBUG: skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
@@ -310,7 +283,6 @@ displayInfo("Laster..");
 
       if(stage==1 && weather1==""){
          weather1=getWeatherText(dataValue);
-         displayInfo(weather1);
          dataValue="";
         }else if(stage==2 && temperature1==""){
          temperature1=dataValue;
@@ -324,7 +296,7 @@ displayInfo("Laster..");
         }else if(stage==5 && temperature2==""){
          temperature2=dataValue;
          dataValue="";
-         displayInfo("All done!: "+stage);
+         displayInfo("All done!: "+stage,1);
          break;
         }
        
@@ -336,12 +308,44 @@ displayInfo("Laster..");
 
   }
 
-  displayInfo("closing connection to yr weather");
+  displayInfo("closing connection to yr weather",1);
+
+
+
+/* --------- Thingspeak ------------ */
+
+const char* host2 = "api.thingspeak.com";
+String url2 = "/channels/160764/fields/1/last"; // Thingspeak channel
+
+if (!client.connect(host2, httpPort)) {
+    displayInfo("connection failed",1);
+    return;
+  }
+  displayInfo("Open connection to thingspeak",1);
+
+    Serial.print("Requesting URL: ");
+  displayInfo(url2,1);
+  
+  // This will send the request to the server
+  client.print(String("GET ") + url2 + " HTTP/1.1\r\n" +
+               "Host: " + host2 + "\r\n" + 
+               "User-Agent: KjartanMichalsenrESP8266\r\n" +
+               "Connection: close\r\n\r\n");
+  delay(500);
+
+
+while(client.available()){
+    int nexttemp = 0;
+    String line = client.readStringUntil('\r\n');
+ 
+    displayInfo("<"+line+">",1);
+    outsidetemp = line;
+}
 
 
 /* --------- Now next ------------ */
 
-displayInfo("NowNext");
+displayInfo("NowNext",1);
 
 const char* host3 = "api.met.no";
 //host3 = "d7.no";
@@ -352,13 +356,13 @@ url3 = "/place/Norway/Oslo/Oslo/Etterstad/varsel_nu.xml";
 //url3 = "/ver/sample.xml";
 
 if (!client.connect(host3, httpPort)) {
-    displayInfo("connection failed");
+    displayInfo("connection failed",1);
     return;
 }
-  displayInfo("Open connection to now next api");
+  displayInfo("Open connection to now next api",1);
 
     Serial.print("Requesting URL: ");
-  displayInfo(url3);
+  displayInfo(url3,1);
   
   // This will send the request to the server
   client.print(String("GET ") + url3 + " HTTP/1.1\r\n" +
@@ -394,9 +398,9 @@ while(client.available()){
             {
                if (c == '"' && dataValue != "=" ) {
              
-                displayInfoShort("Fant nedbor:");
+                displayInfo("Fant nedbor:",1);
                 startRead = false; // slutt å lese
-                displayInfoShort(dataValue); // skriv ut linjen til skjerm
+                displayInfo(dataValue,1); // skriv ut linjen til skjerm
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
 
@@ -426,7 +430,7 @@ while(client.available()){
 
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfoShort(tempValue); // skriv ut linjen til konsoll
+          displayInfo(tempValue,1); // skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
@@ -434,7 +438,7 @@ while(client.available()){
       }
 }
 
-/* --------- END Now next ------------ */
+/* --------- END get values ------------ */
 
 
 
@@ -450,51 +454,44 @@ while(client.available()){
   
   display.clearDisplay();
   
-  if(displayView==1){ 
-    display.setTextSize(4);
-    display.setTextColor(BLACK);
-    display.setCursor(0,0);
-    display.println(""+temperature1+"");
-    }
-  if(displayView==2){
+
+  if(displayView==1){
     display.setTextSize(2);
     if(weather1.length()>16){
         display.setTextSize(1);
       }
     display.setTextColor(BLACK);
     display.setCursor(0,0);
-    display.println(""+weather1+"");
+    display.println(""+weather1+":"+temperature1);
     
       }
-  if(displayView==3){
-   
+
+if(displayView==2){
     display.setTextColor(BLACK);
     display.setCursor(0,0);
-   
-    display.setTextSize(1);
-    display.println(timefrom);
-        display.setTextSize(4);
-        display.setCursor(0,12);
-         display.println(""+temperature2+"");
-    
-      }
-if(displayView==4){
-     
-    display.setTextColor(BLACK);
-    display.setCursor(0,0);
-           display.setTextSize(1);
+     display.setTextSize(1);
     display.println(timefrom);
     display.setTextSize(2);
     if(weather1.length()>16){
         display.setTextSize(1);
       }
     display.setCursor(0,10);
-    display.println(""+weather2+"");
-    
-
+    display.println(""+weather2+":"+temperature2);
       }
 
-if(displayView==5){
+if(displayView==3){
+ 
+    display.setTextColor(BLACK);
+    display.setCursor(0,0);
+           display.setTextSize(1);
+    display.println("Ute:");
+    display.setTextSize(3);
+    display.setCursor(0,10);
+    display.println(""+outsidetemp+"");
+    
+      }
+
+if(displayView==4){
   int MAX = 12;
   for (int i = 0; i < MAX; i++ ){
     display.fillRect((i*5),(48-(rainArray[ i ]*3)), 5,  (rainArray[ i ]*3), BLACK);
