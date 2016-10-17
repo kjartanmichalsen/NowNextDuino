@@ -1,5 +1,5 @@
  /* PINS for nodemcu 0.9 */
-#define D0 16
+#define D0 16 // LED esp?
 #define D1 5 // I2C Bus SCL (clock)
 #define D2 4 // I2C Bus SDA (data)
 #define D3 0
@@ -15,11 +15,15 @@
 
 #include <SPI.h>
 #include <Adafruit_GFX.h>
-#include <Adafruit_PCD8544.h>
 
-#include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
-#include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
-#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+// for oled
+//#include <Wire.h>
+//#include <Adafruit_SSD1306.h>
+//#define OLED_RESET 2
+//Adafruit_SSD1306 display(OLED_RESET);
+
+// for nokia 5110
+#include <Adafruit_PCD8544.h>
 
 // Nokia 5110 pins definition
 // Serial clock out (SCLK)
@@ -28,7 +32,16 @@
 // LCD chip select (CS) (SCE)
 // LCD reset (RST)
 
-Adafruit_PCD8544 display = Adafruit_PCD8544(2, 0, 4, 5, 16);
+//classic
+//Adafruit_PCD8544 display = Adafruit_PCD8544(2, 0, 4, 5, 16);
+// no flash
+Adafruit_PCD8544 display = Adafruit_PCD8544(D8, D3, D2, D1, D7);
+
+
+#include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
+#include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
+#include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+
 
 WiFiManager wifiManager;
 
@@ -75,44 +88,44 @@ void displayInfo(String info, int seconds){
 
 String getWeatherText(String weatherNumber){
 if(weatherNumber=="1"){return  "Sol";}
-if(weatherNumber=="2"){return  "Lett-  skyet";}
-if(weatherNumber=="3"){return  "Delvis skyet";}
+if(weatherNumber=="2"){return  "Lett- skyet";}
+if(weatherNumber=="3"){return  "Delvisskyet";}
 if(weatherNumber=="4"){return  "Skyet";}
-if(weatherNumber=="40"){return "Lette  regnbyger";}
-if(weatherNumber=="5"){return  "Regn-  byger";}
+if(weatherNumber=="40"){return "Lette regnbyger";}
+if(weatherNumber=="5"){return  "Regn- byger";}
 if(weatherNumber=="41"){return "Kraftige regnbyger";}
-if(weatherNumber=="24"){return "Lette  regnbyger og torden";}
+if(weatherNumber=="24"){return "Lette regnbyger og torden";}
 if(weatherNumber=="6"){return  "Regnbyger og torden";}
 if(weatherNumber=="25"){return "Kraftige regnbyger og torden";}
-if(weatherNumber=="42"){return "Lette   sluddbyger";}
+if(weatherNumber=="42"){return "Lette sluddbyger";}
 if(weatherNumber=="7"){return  "Sluddbyger";}
 if(weatherNumber=="43"){return "Kraftige sluddbyger";}
-if(weatherNumber=="26"){return "Lette   sluddbyger og torden";}
+if(weatherNumber=="26"){return "Lette sluddbyger og torden";}
 if(weatherNumber=="20"){return "Sluddbyger og torden";}
 if(weatherNumber=="27"){return "Kraftige sluddbyger og torden";}
-if(weatherNumber=="44"){return "Lette   snobyger";}
+if(weatherNumber=="44"){return "Lette snobyger";}
 if(weatherNumber=="8"){return  "Snobyger";}
 if(weatherNumber=="45"){return "Kraftige snobyger";}
 if(weatherNumber=="28"){return "Lette   snobyger og torden";}
 if(weatherNumber=="21"){return "Snøbyger og torden";}
 if(weatherNumber=="29"){return "Kraftige snobyger og torden";}
-if(weatherNumber=="46"){return "Lett    regn";}
+if(weatherNumber=="46"){return "Lett  regn";}
 if(weatherNumber=="9"){return  "Regn";}
 if(weatherNumber=="10"){return "Kraftig regn";}
-if(weatherNumber=="30"){return "Lett    regn og torden";}
+if(weatherNumber=="30"){return "Lett  regn og torden";}
 if(weatherNumber=="22"){return "Regn og torden";}
 if(weatherNumber=="11"){return "Kraftig regn og torden";}
-if(weatherNumber=="47"){return "Lett    sludd";}
+if(weatherNumber=="47"){return "Lett  sludd";}
 if(weatherNumber=="12"){return "Sludd";}
 if(weatherNumber=="48"){return "Kraftig sludd";}
-if(weatherNumber=="31"){return "Lett    sludd og torden";}
+if(weatherNumber=="31"){return "Lett  sludd og torden";}
 if(weatherNumber=="23"){return "Sludd og torden";}
 if(weatherNumber=="32"){return "Kraftig sludd og torden";}
 if(weatherNumber=="49"){return "Lett sno";}
 if(weatherNumber=="13"){return "Sno";}
 if(weatherNumber=="50"){return "Kraftig sno";}
 if(weatherNumber=="33"){return "Lett sno og torden";}
-if(weatherNumber=="14"){return "Sno og  torden";}
+if(weatherNumber=="14"){return "Sno ogtorden";}
 if(weatherNumber=="34"){return "Kraftig sno og torden";}
 if(weatherNumber=="15"){return "Taake";}
 return "Ikke funnet type "+weatherNumber;
@@ -122,10 +135,14 @@ void setup() {
   Serial.begin(9600);
 
   // Gjør klar skjermen
-  display.begin();
+  // for nokia 5110
+    display.begin();
+   display.setContrast(50);
+
+  //for oled
+   //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
   
   // Endre kontrast 
-  display.setContrast(50);
   display.clearDisplay();
   display.display();
 
@@ -348,7 +365,7 @@ while(client.available()){
 displayInfo("NowNext",1);
 
 const char* host3 = "api.met.no";
-//host3 = "d7.no";
+//host3 = "d7.no"; 
 host3 = host;
 String url3 = "/weatherapi/nowcast/0.9/?lat=60.10;lon=9.58";
 url3 = "/sted/Norge/Finnmark/Vardø/Vardø/varsel_nu.xml";
