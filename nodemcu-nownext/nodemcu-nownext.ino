@@ -16,32 +16,38 @@
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 
-// for oled
-//#include <Wire.h>
-//#include <Adafruit_SSD1306.h>
-//#define OLED_RESET 2
-//Adafruit_SSD1306 display(OLED_RESET);
+
+#define useSSD1306 true
+//boolean usePCD8544 = true;
+
+// For OLED
+#if useSSD1306
+  #include <Wire.h>
+  #include <Adafruit_SSD1306.h>
+  
+  #define OLED_RESET D0  // RST-PIN for OLED (not used)
+  #define OLED_SDA    D1  // SDA-PIN for I2C OLED
+  #define OLED_SCL    D2  // SCL-PIN for I2C OLED
+#endif
+
+Adafruit_SSD1306 display(OLED_RESET);
 
 // for nokia 5110
-#include <Adafruit_PCD8544.h>
+  // Nokia 5110 pins definition
+  // Serial clock out (SCLK)
+  // Serial data out (DIN) (DN<MOSI>)
+  // Data/Command select (D/C) (DC)
+  // LCD chip select (CS) (SCE)
+  // LCD reset (RST)
 
-// Nokia 5110 pins definition
-// Serial clock out (SCLK)
-// Serial data out (DIN) (DN<MOSI>)
-// Data/Command select (D/C) (DC)
-// LCD chip select (CS) (SCE)
-// LCD reset (RST)
-
-//classic
-//Adafruit_PCD8544 display = Adafruit_PCD8544(2, 0, 4, 5, 16);
-// no flash
-Adafruit_PCD8544 display = Adafruit_PCD8544(D8, D3, D2, D1, D7);
-
+#if usePCD8544 
+  #include <Adafruit_PCD8544.h>
+  Adafruit_PCD8544 display = Adafruit_PCD8544(D8, D3, D2, D1, D7);
+#endif
 
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
 #include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
-
 
 WiFiManager wifiManager;
 
@@ -64,94 +70,37 @@ int rainArray[] = {2, 4, 8, 3, 6, 2, 4, 8, 3, 6, 2, 4, 8, 3, 6};
 int loopCounter=0;
 int displayView=1;
 
-
-
-// Rutine for å skrive ut en melding til skjerm 
-
-void displayInfo(String info, int seconds){
-    display.clearDisplay();
-    display.setTextSize(2);
-    if(info.length()>16){
-        display.setTextSize(1);
-      }
-    display.setTextColor(BLACK);
-    display.setCursor(0,0);
-    display.println(info);
-    display.display();
-    Serial.println(info); // skriv ut linjen til konsoll
-    delay((seconds*100));
-}
-
-
-
-// Definisjon fra yr på værtekst
-
-String getWeatherText(String weatherNumber){
-if(weatherNumber=="1"){return  "Sol";}
-if(weatherNumber=="2"){return  "Lett- skyet";}
-if(weatherNumber=="3"){return  "Delvisskyet";}
-if(weatherNumber=="4"){return  "Skyet";}
-if(weatherNumber=="40"){return "Lette regnbyger";}
-if(weatherNumber=="5"){return  "Regn- byger";}
-if(weatherNumber=="41"){return "Kraftige regnbyger";}
-if(weatherNumber=="24"){return "Lette regnbyger og torden";}
-if(weatherNumber=="6"){return  "Regnbyger og torden";}
-if(weatherNumber=="25"){return "Kraftige regnbyger og torden";}
-if(weatherNumber=="42"){return "Lette sluddbyger";}
-if(weatherNumber=="7"){return  "Sluddbyger";}
-if(weatherNumber=="43"){return "Kraftige sluddbyger";}
-if(weatherNumber=="26"){return "Lette sluddbyger og torden";}
-if(weatherNumber=="20"){return "Sluddbyger og torden";}
-if(weatherNumber=="27"){return "Kraftige sluddbyger og torden";}
-if(weatherNumber=="44"){return "Lette snobyger";}
-if(weatherNumber=="8"){return  "Snobyger";}
-if(weatherNumber=="45"){return "Kraftige snobyger";}
-if(weatherNumber=="28"){return "Lette   snobyger og torden";}
-if(weatherNumber=="21"){return "Snøbyger og torden";}
-if(weatherNumber=="29"){return "Kraftige snobyger og torden";}
-if(weatherNumber=="46"){return "Lett  regn";}
-if(weatherNumber=="9"){return  "Regn";}
-if(weatherNumber=="10"){return "Kraftig regn";}
-if(weatherNumber=="30"){return "Lett  regn og torden";}
-if(weatherNumber=="22"){return "Regn og torden";}
-if(weatherNumber=="11"){return "Kraftig regn og torden";}
-if(weatherNumber=="47"){return "Lett  sludd";}
-if(weatherNumber=="12"){return "Sludd";}
-if(weatherNumber=="48"){return "Kraftig sludd";}
-if(weatherNumber=="31"){return "Lett  sludd og torden";}
-if(weatherNumber=="23"){return "Sludd og torden";}
-if(weatherNumber=="32"){return "Kraftig sludd og torden";}
-if(weatherNumber=="49"){return "Lett sno";}
-if(weatherNumber=="13"){return "Sno";}
-if(weatherNumber=="50"){return "Kraftig sno";}
-if(weatherNumber=="33"){return "Lett sno og torden";}
-if(weatherNumber=="14"){return "Sno ogtorden";}
-if(weatherNumber=="34"){return "Kraftig sno og torden";}
-if(weatherNumber=="15"){return "Taake";}
-return "Ikke funnet type "+weatherNumber;
-  }
-
 void setup() {
-  Serial.begin(9600);
-
-  // Gjør klar skjermen
-  // for nokia 5110
-    display.begin();
-   display.setContrast(50);
-
-  //for oled
-   //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
+    Serial.begin(9600);
   
-  // Endre kontrast 
-  display.clearDisplay();
-  display.display();
-
-  delay(100);
- 
-  // Koble til med wifi-manager
- 
-  displayInfo("Koble til wifi'Netver' og   velg ditt     hjemmenettverk",1);
-  wifiManager.autoConnect("Netver");
+  /*if(usePCD8544){  
+     // Gjør klar skjermen
+     // for nokia 5110
+     display.begin();
+     display.setContrast(50);
+  }*/
+  
+  if(useSSD1306){  
+    //for oled
+      // initial I2C bus and OLED display
+    Wire.begin(OLED_SDA, OLED_SCL);
+    Wire.setClock(400000);
+  
+    // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
+    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x64)
+  }
+  
+    
+    // Endre kontrast 
+    display.clearDisplay();
+    display.display();
+  
+    delay(100);
+   
+    // Koble til med wifi-manager
+   
+    displayInfo("Koble til wifi'Netver' og   velg ditt     hjemmenettverk",1);
+    wifiManager.autoConnect("Netver");
 }
 
 void loop() {
@@ -161,6 +110,8 @@ void loop() {
 if(loopCounter==0){
 
   displayView=0; // Startskjermbilde
+
+  
   stringPos = 0; // teller for inkomne tegn i XML
   stage = 0; // Brukes for å holde orden på hvor langt vi er kommet i XMLen
   tempValue = ""; // Midlertidig verdi
@@ -477,14 +428,14 @@ while(client.available()){
     if(weather1.length()>16){
         display.setTextSize(1);
       }
-    display.setTextColor(BLACK);
+    display.setTextColor(WHITE);
     display.setCursor(0,0);
     display.println(""+weather1+":"+temperature1);
     
       }
 
 if(displayView==2){
-    display.setTextColor(BLACK);
+    display.setTextColor(WHITE);
     display.setCursor(0,0);
      display.setTextSize(1);
     display.println(timefrom);
@@ -492,13 +443,14 @@ if(displayView==2){
     if(weather1.length()>16){
         display.setTextSize(1);
       }
+    display.setTextColor(WHITE);
     display.setCursor(0,10);
     display.println(""+weather2+":"+temperature2);
       }
 
 if(displayView==3){
  
-    display.setTextColor(BLACK);
+    display.setTextColor(WHITE);
     display.setCursor(0,0);
            display.setTextSize(1);
     display.println("Ute:");
@@ -511,9 +463,8 @@ if(displayView==3){
 if(displayView==4){
   int MAX = 12;
   for (int i = 0; i < MAX; i++ ){
-    display.fillRect((i*5),(48-(rainArray[ i ]*3)), 5,  (rainArray[ i ]*3), BLACK);
+    display.fillRect((i*5),(48-(rainArray[ i ]*3)), 5,  (rainArray[ i ]*3), WHITE);
   }
-   display.setTextColor(BLACK);
    display.setCursor(0,0);
    display.setTextSize(1);
    display.println("Regn neste 90");
