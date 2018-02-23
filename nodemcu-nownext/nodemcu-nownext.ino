@@ -181,7 +181,7 @@ displayInfo("Laster..",1);
            if(tempValue.indexOf("numberEx=") > 0)
             {
                if (c == '"' && dataValue != "=" ) {
-                displayInfo(tempValue,1);
+                displayInfo(tempValue,5);
                 displayInfo("Fant ver",1);
                 startRead = false; // slutt å lese
                 displayInfo(dataValue,1); // skriv ut linjen til skjerm
@@ -241,7 +241,7 @@ displayInfo("Laster..",1);
         
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          //displayInfo(tempValue,1); // DEBUG: skriv ut linjen til konsoll
+          displayInfo("debug:"+tempValue,1); // DEBUG: skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
@@ -398,7 +398,7 @@ while(client.available()){
 
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfo(tempValue,1); // skriv ut linjen til konsoll
+          displayInfo("debug: "+tempValue,1); // skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
