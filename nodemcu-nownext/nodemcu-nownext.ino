@@ -127,6 +127,7 @@ if(loopCounter==0){
 
   const char* host = "www.yr.no";
   String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
+  String url = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel.xml"; // Bytt ut med din lokasjon
 
   displayInfo("connecting to ",1);
   displayInfo(host,1);
@@ -321,6 +322,7 @@ host3 = host;
 String url3 = "/weatherapi/nowcast/0.9/?lat=60.10;lon=9.58";
 url3 = "/sted/Norge/Finnmark/Vardø/Vardø/varsel_nu.xml";
 url3 = "/place/Norway/Oslo/Oslo/Etterstad/varsel_nu.xml";
+url3 = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel_nu.xml";
 //url3 = "/ver/sample.xml";
 
 if (!client.connect(host3, httpPort)) {
