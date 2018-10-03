@@ -127,6 +127,7 @@ if(loopCounter==0){
 
   const char* host = "www.yr.no";
   String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
+  String url = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel.xml"; // Bytt ut med din lokasjon
 
   displayInfo("connecting to ",1);
   displayInfo(host,1);
@@ -181,7 +182,7 @@ displayInfo("Laster..",1);
            if(tempValue.indexOf("numberEx=") > 0)
             {
                if (c == '"' && dataValue != "=" ) {
-                displayInfo(tempValue,1);
+                displayInfo(tempValue,5);
                 displayInfo("Fant ver",1);
                 startRead = false; // slutt å lese
                 displayInfo(dataValue,1); // skriv ut linjen til skjerm
@@ -241,7 +242,7 @@ displayInfo("Laster..",1);
         
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          //displayInfo(tempValue,1); // DEBUG: skriv ut linjen til konsoll
+          displayInfo("debug:"+tempValue,1); // DEBUG: skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
@@ -321,6 +322,7 @@ host3 = host;
 String url3 = "/weatherapi/nowcast/0.9/?lat=60.10;lon=9.58";
 url3 = "/sted/Norge/Finnmark/Vardø/Vardø/varsel_nu.xml";
 url3 = "/place/Norway/Oslo/Oslo/Etterstad/varsel_nu.xml";
+url3 = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel_nu.xml";
 //url3 = "/ver/sample.xml";
 
 if (!client.connect(host3, httpPort)) {
@@ -398,7 +400,7 @@ while(client.available()){
 
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfo(tempValue,1); // skriv ut linjen til konsoll
+          displayInfo("debug: "+tempValue,1); // skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }

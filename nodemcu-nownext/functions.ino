@@ -62,3 +62,5 @@ void displayInfo(String info, int seconds){
     delay((seconds*100));
 }
 
+// Later, add icons like:
+// https://github.com/andydoro/Huzzah-Weather-Display/blob/master/Huzzah-Weather-Display/icons.h
