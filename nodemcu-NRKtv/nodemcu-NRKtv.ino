@@ -16,38 +16,32 @@
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 
-
-#define useSSD1306 true
-//boolean usePCD8544 = true;
-
-// For OLED
-#if useSSD1306
-  #include <Wire.h>
-  #include <Adafruit_SSD1306.h>
-  
-  #define OLED_RESET D0  // RST-PIN for OLED (not used)
-  #define OLED_SDA    D1  // SDA-PIN for I2C OLED
-  #define OLED_SCL    D2  // SCL-PIN for I2C OLED
-#endif
-
-Adafruit_SSD1306 display(OLED_RESET);
+// for oled
+//#include <Wire.h>
+//#include <Adafruit_SSD1306.h>
+//#define OLED_RESET 2
+//Adafruit_SSD1306 display(OLED_RESET);
 
 // for nokia 5110
-  // Nokia 5110 pins definition
-  // Serial clock out (SCLK)
-  // Serial data out (DIN) (DN<MOSI>)
-  // Data/Command select (D/C) (DC)
-  // LCD chip select (CS) (SCE)
-  // LCD reset (RST)
+#include <Adafruit_PCD8544.h>
 
-#if usePCD8544 
-  #include <Adafruit_PCD8544.h>
-  Adafruit_PCD8544 display = Adafruit_PCD8544(D8, D3, D2, D1, D7);
-#endif
+// Nokia 5110 pins definition
+// Serial clock out (SCLK)
+// Serial data out (DIN) (DN<MOSI>)
+// Data/Command select (D/C) (DC)
+// LCD chip select (CS) (SCE)
+// LCD reset (RST)
+
+//classic
+//Adafruit_PCD8544 display = Adafruit_PCD8544(2, 0, 4, 5, 16);
+// no flash
+Adafruit_PCD8544 display = Adafruit_PCD8544(D8, D3, D2, D1, D7);
+
 
 #include <DNSServer.h>            //Local DNS Server used for redirecting all requests to the configuration portal
 #include <ESP8266WebServer.h>     //Local WebServer used to serve the configuration portal
 #include <WiFiManager.h>          //https://github.com/tzapu/WiFiManager WiFi Configuration Magic
+
 
 WiFiManager wifiManager;
 
@@ -64,77 +58,101 @@ String temperature2;
 String weather2;
 String timefrom;
 String outsidetemp;
+String nrktv;
 
-int rainArray[] = {2, 4, 8, 3, 6, 2, 4, 8, 3, 6, 2, 4, 8, 3, 6};
+int rainArray[15];
 
 int loopCounter=0;
 int displayView=1;
 
-#define clear_day_width 50
-#define clear_day_height 50
-const char clear_day_bits[] PROGMEM= {
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x07, 0x00, 0x00, 
-  0x00, 0x00, 0x00, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x07, 
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x18, 
-  0x00, 0x03, 0x60, 0x00, 0x00, 0x00, 0x3C, 0x00, 0x00, 0xF0, 0x00, 0x00, 
-  0x00, 0x7C, 0x00, 0x00, 0xF8, 0x00, 0x00, 0x00, 0xF8, 0x00, 0x00, 0x78, 
-  0x00, 0x00, 0x00, 0xF0, 0xC0, 0x0F, 0x38, 0x00, 0x00, 0x00, 0x60, 0xF0, 
-  0x7F, 0x18, 0x00, 0x00, 0x00, 0x00, 0xFC, 0xFF, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x7E, 0xF8, 0x01, 0x00, 0x00, 0x00, 0x00, 0x1F, 0xE0, 0x03, 0x00, 
-  0x00, 0x00, 0x00, 0x0F, 0xC0, 0x07, 0x00, 0x00, 0x00, 0x80, 0x07, 0x80, 
-  0x07, 0x00, 0x00, 0x00, 0x80, 0x03, 0x00, 0x07, 0x00, 0x00, 0x00, 0xC0, 
-  0x03, 0x00, 0x0F, 0x00, 0x00, 0xC0, 0xC3, 0x01, 0x00, 0x0E, 0x0F, 0x00, 
-  0xE0, 0xC7, 0x01, 0x00, 0x8E, 0x1F, 0x00, 0xE0, 0xC7, 0x01, 0x00, 0x8E, 
-  0x1F, 0x00, 0xC0, 0xC3, 0x01, 0x00, 0x0E, 0x0F, 0x00, 0x00, 0xC0, 0x03, 
-  0x00, 0x0F, 0x00, 0x00, 0x00, 0x80, 0x03, 0x00, 0x0F, 0x00, 0x00, 0x00, 
-  0x80, 0x07, 0x80, 0x07, 0x00, 0x00, 0x00, 0x80, 0x0F, 0x80, 0x07, 0x00, 
-  0x00, 0x00, 0x00, 0x1F, 0xE0, 0x03, 0x00, 0x00, 0x00, 0x00, 0x7E, 0xF8, 
-  0x01, 0x00, 0x00, 0x00, 0x00, 0xFC, 0xFF, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0xF8, 0x7F, 0x00, 0x00, 0x00, 0x00, 0xF0, 0xC0, 0x1F, 0x38, 0x00, 0x00, 
-  0x00, 0xF8, 0x00, 0x00, 0x78, 0x00, 0x00, 0x00, 0x7C, 0x00, 0x00, 0xF8, 
-  0x00, 0x00, 0x00, 0x3C, 0x00, 0x00, 0xF0, 0x00, 0x00, 0x00, 0x18, 0x00, 
-  0x03, 0x60, 0x00, 0x00, 0x00, 0x00, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x80, 0x07, 0x00, 0x00, 
-  0x00, 0x00, 0x00, 0x80, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 
-  0x00, 0x00, };
+
+
+// Rutine for å skrive ut en melding til skjerm 
+
+void displayInfo(String info, int seconds){
+    display.clearDisplay();
+    display.setTextSize(2);
+    if(info.length()>16){
+        display.setTextSize(1);
+      }
+    display.setTextColor(BLACK);
+    display.setCursor(0,0);
+    display.println(info);
+    display.display();
+    Serial.println(info); // skriv ut linjen til konsoll
+    delay((seconds*100));
+}
+
+
+
+// Definisjon fra yr på værtekst
+
+String getWeatherText(String weatherNumber){
+if(weatherNumber=="1"){return  "Sol";}
+if(weatherNumber=="2"){return  "Lett- skyet";}
+if(weatherNumber=="3"){return  "Delvisskyet";}
+if(weatherNumber=="4"){return  "Skyet";}
+if(weatherNumber=="40"){return "Lette regnbyger";}
+if(weatherNumber=="5"){return  "Regn- byger";}
+if(weatherNumber=="41"){return "Kraftige regnbyger";}
+if(weatherNumber=="24"){return "Lette regnbyger og torden";}
+if(weatherNumber=="6"){return  "Regnbyger og torden";}
+if(weatherNumber=="25"){return "Kraftige regnbyger og torden";}
+if(weatherNumber=="42"){return "Lette sluddbyger";}
+if(weatherNumber=="7"){return  "Sluddbyger";}
+if(weatherNumber=="43"){return "Kraftige sluddbyger";}
+if(weatherNumber=="26"){return "Lette sluddbyger og torden";}
+if(weatherNumber=="20"){return "Sluddbyger og torden";}
+if(weatherNumber=="27"){return "Kraftige sluddbyger og torden";}
+if(weatherNumber=="44"){return "Lette snobyger";}
+if(weatherNumber=="8"){return  "Snobyger";}
+if(weatherNumber=="45"){return "Kraftige snobyger";}
+if(weatherNumber=="28"){return "Lette   snobyger og torden";}
+if(weatherNumber=="21"){return "Snøbyger og torden";}
+if(weatherNumber=="29"){return "Kraftige snobyger og torden";}
+if(weatherNumber=="46"){return "Lett  regn";}
+if(weatherNumber=="9"){return  "Regn";}
+if(weatherNumber=="10"){return "Kraftig regn";}
+if(weatherNumber=="30"){return "Lett  regn og torden";}
+if(weatherNumber=="22"){return "Regn og torden";}
+if(weatherNumber=="11"){return "Kraftig regn og torden";}
+if(weatherNumber=="47"){return "Lett  sludd";}
+if(weatherNumber=="12"){return "Sludd";}
+if(weatherNumber=="48"){return "Kraftig sludd";}
+if(weatherNumber=="31"){return "Lett  sludd og torden";}
+if(weatherNumber=="23"){return "Sludd og torden";}
+if(weatherNumber=="32"){return "Kraftig sludd og torden";}
+if(weatherNumber=="49"){return "Lett sno";}
+if(weatherNumber=="13"){return "Sno";}
+if(weatherNumber=="50"){return "Kraftig sno";}
+if(weatherNumber=="33"){return "Lett sno og torden";}
+if(weatherNumber=="14"){return "Sno ogtorden";}
+if(weatherNumber=="34"){return "Kraftig sno og torden";}
+if(weatherNumber=="15"){return "Taake";}
+return "Ikke funnet type "+weatherNumber;
+  }
 
 void setup() {
-    Serial.begin(9600);
+  Serial.begin(9600);
+
+  // Gjør klar skjermen
+  // for nokia 5110
+    display.begin();
+   display.setContrast(50);
+
+  //for oled
+   //display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3D (for the 128x64)
   
-  /*if(usePCD8544){  
-     // Gjør klar skjermen
-     // for nokia 5110
-     display.begin();
-     display.setContrast(50);
-  }*/
-  
-  if(useSSD1306){  
-    //for oled
-      // initial I2C bus and OLED display
-    Wire.begin(OLED_SDA, OLED_SCL);
-    Wire.setClock(400000);
-  
-    // by default, we'll generate the high voltage from the 3.3v line internally! (neat!)
-    display.begin(SSD1306_SWITCHCAPVCC, 0x3C);  // initialize with the I2C addr 0x3C (for the 128x64)
-  }
-  
-    
-    // Endre kontrast 
-    display.clearDisplay();
-    display.display();
-  
-    delay(100);
-   
-    // Koble til med wifi-manager
-   
-    displayInfo("Koble til wifi'Netver' og   velg ditt     hjemmenettverk",1);
-    wifiManager.autoConnect("Netver");
+  // Endre kontrast 
+  display.clearDisplay();
+  display.display();
+
+  delay(100);
+ 
+  // Koble til med wifi-manager
+ 
+  displayInfo("Koble til wifi'Netver' og   velg ditt     hjemmenettverk",1);
+  wifiManager.autoConnect("Netver");
 }
 
 void loop() {
@@ -144,8 +162,6 @@ void loop() {
 if(loopCounter==0){
 
   displayView=0; // Startskjermbilde
-
-  
   stringPos = 0; // teller for inkomne tegn i XML
   stage = 0; // Brukes for å holde orden på hvor langt vi er kommet i XMLen
   tempValue = ""; // Midlertidig verdi
@@ -161,7 +177,6 @@ if(loopCounter==0){
 
   const char* host = "www.yr.no";
   String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
-  url = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel.xml"; // Bytt ut med din lokasjon
 
   displayInfo("connecting to ",1);
   displayInfo(host,1);
@@ -216,7 +231,7 @@ displayInfo("Laster..",1);
            if(tempValue.indexOf("numberEx=") > 0)
             {
                if (c == '"' && dataValue != "=" ) {
-                displayInfo(tempValue,5);
+                displayInfo(tempValue,1);
                 displayInfo("Fant ver",1);
                 startRead = false; // slutt å lese
                 displayInfo(dataValue,1); // skriv ut linjen til skjerm
@@ -276,7 +291,7 @@ displayInfo("Laster..",1);
         
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfo("debug:"+tempValue,1); // DEBUG: skriv ut linjen til konsoll
+          //displayInfo(tempValue,1); // DEBUG: skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
@@ -346,6 +361,8 @@ while(client.available()){
 }
 
 
+
+
 /* --------- Now next ------------ */
 
 displayInfo("NowNext",1);
@@ -356,7 +373,6 @@ host3 = host;
 String url3 = "/weatherapi/nowcast/0.9/?lat=60.10;lon=9.58";
 url3 = "/sted/Norge/Finnmark/Vardø/Vardø/varsel_nu.xml";
 url3 = "/place/Norway/Oslo/Oslo/Etterstad/varsel_nu.xml";
-url3 = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel_nu.xml";
 //url3 = "/ver/sample.xml";
 
 if (!client.connect(host3, httpPort)) {
@@ -434,12 +450,41 @@ while(client.available()){
 
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfo("debug: "+tempValue,1); // skriv ut linjen til konsoll
+          displayInfo(tempValue,1); // skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
 
       }
+}
+
+/* --------- NRK TV ------------ */
+
+const char* host4 = "d7.no";
+String url4 = "/analytics/test.php"; // NRK TV stats
+
+if (!client.connect(host4, httpPort)) {
+    displayInfo("connection failed",1);
+    return;
+  }
+  displayInfo("Open connection to thingspeak",1);
+
+    Serial.print("Requesting URL: ");
+  displayInfo(url2,1);
+  
+  // This will send the request to the server
+  client.print(String("GET ") + url4 + " HTTP/1.1\r\n" +
+               "Host: " + host4 + "\r\n" + 
+               "User-Agent: KjartanMichalsenrESP8266\r\n" +
+               "Connection: close\r\n\r\n");
+  delay(500);
+
+
+while(client.available()){
+    String line = client.readStringUntil('\r\n');
+ 
+    displayInfo("<"+line+">",1);
+    nrktv = line;
 }
 
 /* --------- END get values ------------ */
@@ -464,14 +509,14 @@ while(client.available()){
     if(weather1.length()>16){
         display.setTextSize(1);
       }
-    display.setTextColor(WHITE);
+    display.setTextColor(BLACK);
     display.setCursor(0,0);
     display.println(""+weather1+":"+temperature1);
     
       }
 
 if(displayView==2){
-    display.setTextColor(WHITE);
+    display.setTextColor(BLACK);
     display.setCursor(0,0);
      display.setTextSize(1);
     display.println(timefrom);
@@ -479,14 +524,13 @@ if(displayView==2){
     if(weather1.length()>16){
         display.setTextSize(1);
       }
-    display.setTextColor(WHITE);
     display.setCursor(0,10);
     display.println(""+weather2+":"+temperature2);
       }
 
 if(displayView==3){
  
-    display.setTextColor(WHITE);
+    display.setTextColor(BLACK);
     display.setCursor(0,0);
            display.setTextSize(1);
     display.println("Ute:");
@@ -497,20 +541,26 @@ if(displayView==3){
       }
 
 if(displayView==4){
+ 
+    display.setTextColor(BLACK);
+    display.setCursor(0,0);
+           display.setTextSize(1);
+    display.println("Brukere:");
+    display.setTextSize(2);
+    display.setCursor(0,10);
+    display.println(""+nrktv+"");
+    
+      }
+
+if(displayView==5){
   int MAX = 12;
-  int willItRain = 0;
   for (int i = 0; i < MAX; i++ ){
-    display.fillRect((i*5),(48-(rainArray[ i ]*3)), 5,  (rainArray[ i ]*3), WHITE);
-    willItRain = willItRain + rainArray[ i ];
+    display.fillRect((i*6),(48-(rainArray[ i ]*4)), 5,  (rainArray[ i ]*4), BLACK);
   }
+   display.setTextColor(BLACK);
    display.setCursor(0,0);
    display.setTextSize(1);
    display.println("Regn neste 90");
-
-    if(willItRain == 0){
-       display.clearDisplay();
-        display.println("Opplett neste 90");
-      }
   
   displayView=0;
 }

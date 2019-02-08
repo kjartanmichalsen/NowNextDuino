@@ -64,6 +64,7 @@ String temperature2;
 String weather2;
 String timefrom;
 String outsidetemp;
+String nrkstats;
 
 int rainArray[] = {2, 4, 8, 3, 6, 2, 4, 8, 3, 6, 2, 4, 8, 3, 6};
 
@@ -442,11 +443,38 @@ while(client.available()){
       }
 }
 
+
+
+/* --------- Thingspeak ------------ */
+
+const char* host4 = "d7.no";
+String url4 = "/analytics/nrk-tv-stats.php"; // Thingspeak channel
+
+if (!client.connect(host4, httpPort)) {
+    displayInfo("connection failed",1);
+    return;
+  }
+  displayInfo("Open connection to nrk",1);
+
+    Serial.print("Requesting URL: ");
+  displayInfo(url4,1);
+  
+  // This will send the request to the server
+  client.print(String("GET ") + url4 + " HTTP/1.1\r\n" +
+               "Host: " + host4 + "\r\n" + 
+               "User-Agent: KjartanMichalsenrESP8266\r\n" +
+               "Connection: close\r\n\r\n");
+  delay(500);
+
+
+while(client.available()){
+    String nrkline = client.readStringUntil('\r\n');
+ 
+    displayInfo("<"+nrkline+">",1);
+    nrkstats = nrkline;
+}
+
 /* --------- END get values ------------ */
-
-
-
-
 
  } //end loopcounter
 
@@ -512,8 +540,22 @@ if(displayView==4){
         display.println("Opplett neste 90");
       }
   
-  displayView=0;
+  
 }
+
+if(displayView==5){
+ 
+    display.setTextColor(WHITE);
+    display.setCursor(0,0);
+           display.setTextSize(1);
+    display.println("NRK TV brukere:");
+    display.setTextSize(3);
+    display.setCursor(0,10);
+    display.println(""+nrkstats+"");
+
+    displayView=0;  
+    
+      }
       
 
   display.display();
