@@ -133,7 +133,7 @@ void setup() {
    
     // Koble til med wifi-manager
    
-    displayInfo("Koble til wifi'Netver' og   velg ditt     hjemmenettverk",1);
+    displayInfo("Koble til wifi'Netver' og 192.168.1.4 i nettleser",1,0);
     wifiManager.autoConnect("Netver");
 }
 
@@ -163,22 +163,22 @@ if(loopCounter==0){
   String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
   url = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel.xml"; // Bytt ut med din lokasjon
 
-  displayInfo("connecting to ",1);
-  displayInfo(host,1);
+  displayInfo("connecting to ",1,0);
+  displayInfo(host,1,0);
   
   // Use WiFiClient class to create TCP connections
   WiFiClient client;
   const int httpPort = 80;
   if (!client.connect(host, httpPort)) {
-    displayInfo("connection failed",1);
+    displayInfo("connection failed",1,0);
     return;
   }
 
-displayInfo("Laster..",1);
+displayInfo("Laster..",1,0);
  
   
   Serial.print("Requesting URL: ");
-  displayInfo(url,1);
+  displayInfo(url,1,0);
   
   // This will send the request to the server
   client.print(String("GET ") + url + " HTTP/1.1\r\n" +
@@ -216,10 +216,10 @@ displayInfo("Laster..",1);
            if(tempValue.indexOf("numberEx=") > 0)
             {
                if (c == '"' && dataValue != "=" ) {
-                displayInfo(tempValue,5);
-                displayInfo("Fant ver",1);
+                displayInfo(tempValue,1,1);
+                //displayInfo("Fant ver",1,1);
                 startRead = false; // slutt å lese
-                displayInfo(dataValue,1); // skriv ut linjen til skjerm
+                displayInfo(dataValue,1,1); // skriv ut linjen til skjerm
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
                 
@@ -241,9 +241,9 @@ displayInfo("Laster..",1);
           if(tempValue.indexOf("temperature") > 0 && stringPos > 35)
             {
                if (c == '"' ) {
-                displayInfo("Fant grader",1);
+                //displayInfo("Fant grader",1,1);
                 startRead = false; // slutt å lese
-                displayInfo("dataValue: "+dataValue,1); // skriv ut linjen til skjerm
+                displayInfo("dataValue: "+dataValue,1,1); // skriv ut linjen til skjerm
 
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
@@ -259,9 +259,9 @@ displayInfo("Laster..",1);
          if(tempValue.indexOf("time from=") > 0 && stringPos > 23 && weather1!="" && timefrom=="")
             {
                if (stringPos == 26 ) {
-                displayInfo("Fant tidsinterval",1);
+                //displayInfo("Fant tidsinterval",1,1);
                 startRead = false; // slutt å lese
-                displayInfo("dataValue: "+dataValue,1); // skriv ut linjen til skjerm
+                displayInfo("dataValue: "+dataValue,1,1); // skriv ut linjen til skjerm
 
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
@@ -276,7 +276,7 @@ displayInfo("Laster..",1);
         
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfo("debug:"+tempValue,1); // DEBUG: skriv ut linjen til konsoll
+          displayInfo("debug:"+tempValue,1,1); // DEBUG: skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
@@ -291,7 +291,7 @@ displayInfo("Laster..",1);
          temperature1=dataValue;
          dataValue="";
         }else if(stage==3 && timefrom==""){
-         timefrom="Fra kl "+dataValue+":00";
+         timefrom=dataValue;
          dataValue="";
         }else if(stage==4 && weather2==""){
          weather2=getWeatherText(dataValue);
@@ -299,7 +299,7 @@ displayInfo("Laster..",1);
         }else if(stage==5 && temperature2==""){
          temperature2=dataValue;
          dataValue="";
-         displayInfo("All done!: "+stage,1);
+         displayInfo("All done!: "+stage,1,0);
          break;
         }
        
@@ -311,7 +311,7 @@ displayInfo("Laster..",1);
 
   }
 
-  displayInfo("closing connection to yr weather",1);
+  displayInfo("closing connection to yr weather",1,0);
 
 
 
@@ -321,13 +321,13 @@ const char* host2 = "api.thingspeak.com";
 String url2 = "/channels/160764/fields/1/last"; // Thingspeak channel
 
 if (!client.connect(host2, httpPort)) {
-    displayInfo("connection failed",1);
+    displayInfo("connection failed",1,0);
     return;
   }
-  displayInfo("Open connection to thingspeak",1);
+  displayInfo("Open connection to thingspeak",1,0);
 
     Serial.print("Requesting URL: ");
-  displayInfo(url2,1);
+  displayInfo(url2,1,0);
   
   // This will send the request to the server
   client.print(String("GET ") + url2 + " HTTP/1.1\r\n" +
@@ -341,14 +341,14 @@ while(client.available()){
     int nexttemp = 0;
     String line = client.readStringUntil('\r\n');
  
-    displayInfo("<"+line+">",1);
+    displayInfo("<"+line+">",1,1);
     outsidetemp = line;
 }
 
 
 /* --------- Now next ------------ */
 
-displayInfo("NowNext",1);
+displayInfo("NowNext",1,0);
 
 const char* host3 = "api.met.no";
 //host3 = "d7.no"; 
@@ -360,13 +360,13 @@ url3 = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel_nu.xml";
 //url3 = "/ver/sample.xml";
 
 if (!client.connect(host3, httpPort)) {
-    displayInfo("connection failed",1);
+    displayInfo("connection failed",1,0);
     return;
 }
-  displayInfo("Open connection to now next api",1);
+  displayInfo("Open connection to now next api",1,0);
 
     Serial.print("Requesting URL: ");
-  displayInfo(url3,1);
+  displayInfo(url3,1,0);
   
   // This will send the request to the server
   client.print(String("GET ") + url3 + " HTTP/1.1\r\n" +
@@ -379,7 +379,6 @@ int rainCount = 0;
 
 while(client.available()){
     //String line = client.readStringUntil('\r\n');
-    //displayInfo(line);
 
     
     float f;
@@ -402,9 +401,9 @@ while(client.available()){
             {
                if (c == '"' && dataValue != "=" ) {
              
-                displayInfo("Fant nedbor:",1);
+                //displayInfo("Fant nedbor:",1,0);
                 startRead = false; // slutt å lese
-                displayInfo(dataValue,1); // skriv ut linjen til skjerm
+                displayInfo(dataValue,1,1); // skriv ut linjen til skjerm
                 tempValue = ""; // nullstill streng
                 stringPos = 0; // Nullstill teller+
 
@@ -434,7 +433,7 @@ while(client.available()){
 
         if (c == '>' ) { // ferdig med en xml-node
           startRead = false; // slutt å lese
-          displayInfo("debug: "+tempValue,1); // skriv ut linjen til konsoll
+          displayInfo(""+tempValue,1,1); // skriv ut linjen til konsoll
           tempValue = ""; // nullstill streng
           stringPos = 0; // Nullstill teller
         }
@@ -472,16 +471,16 @@ while(client.available()){
 
 if(displayView==2){
     display.setTextColor(WHITE);
-    display.setCursor(0,0);
-     display.setTextSize(1);
-    display.println(timefrom);
     display.setTextSize(2);
     if(weather1.length()>16){
         display.setTextSize(1);
       }
     display.setTextColor(WHITE);
-    display.setCursor(0,10);
+    display.setCursor(0,0);
     display.println(""+weather2+":"+temperature2);
+    display.setCursor(90,24);
+    display.setTextSize(1);
+    display.println("Kl "+timefrom);
       }
 
 if(displayView==3){
