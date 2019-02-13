@@ -64,6 +64,7 @@ String temperature2;
 String weather2;
 String timefrom;
 String outsidetemp;
+String infotext;
 
 int rainArray[] = {2, 4, 8, 3, 6, 2, 4, 8, 3, 6, 2, 4, 8, 3, 6};
 
@@ -441,6 +442,36 @@ while(client.available()){
       }
 }
 
+/* --------- InfoScreen ------------ */
+
+const char* host4 = "d7.no";
+String url4 = "/analytics/smart.php"; // PHP proxy
+
+if (!client.connect(host4, httpPort)) {
+    displayInfo("connection failed",1,1);
+    return;
+  }
+  displayInfo("Open connection",1,1);
+
+    Serial.print("Requesting URL: ");
+  displayInfo(url4,1,1);
+  
+  // This will send the request to the server
+  client.print(String("GET ") + url4 + " HTTP/1.1\r\n" +
+               "Host: " + host4 + "\r\n" + 
+               "User-Agent: KjartanMichalsenrESP8266\r\n" +
+               "Connection: close\r\n\r\n");
+  delay(500);
+
+
+while(client.available()){
+    String infoline = client.readStringUntil('\r\n');
+ 
+    displayInfo("<"+infoline+">",10,1);
+    infotext = infoline;
+}
+
+
 /* --------- END get values ------------ */
 
 
@@ -487,10 +518,12 @@ if(displayView==3){
     display.setTextColor(WHITE);
     display.setCursor(0,0);
            display.setTextSize(1);
-    display.println("Ute:");
+    //display.println("Temp ute:");       
+    display.println("Google Assistant:");
     display.setTextSize(3);
     display.setCursor(0,10);
-    display.println(""+outsidetemp+"");
+    //display.println(""+outsidetemp+"");
+    display.println(""+infotext+"");
     
       }
 

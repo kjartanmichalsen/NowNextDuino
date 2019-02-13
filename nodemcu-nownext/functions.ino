@@ -60,7 +60,7 @@ void displayInfo(String info, int seconds, int loading){
     if(loading==1){
           display.setTextSize(2);
           display.setTextColor(WHITE);
-          display.setCursor(0,0);
+          display.setCursor(20,10);
           display.println("LOADING");
       }
     
