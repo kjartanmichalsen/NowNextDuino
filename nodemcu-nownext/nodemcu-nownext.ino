@@ -133,8 +133,8 @@ void setup() {
    
     // Koble til med wifi-manager
    
-    displayInfo("Koble til wifi'Netver' og 192.168.1.4 i nettleser",1,0);
-    wifiManager.autoConnect("Netver");
+    displayInfo("Koble til wifi espYR og 192.168.244.1     i nettleser",1,0);
+    wifiManager.autoConnect("espYR");
 }
 
 void loop() {
@@ -143,7 +143,7 @@ void loop() {
 // Om loopCounter er 0, hent data fra yr. Hvis ikke, vis data som er hentet ned - skjermbilde for skjermbilde.
 if(loopCounter==0){
 
-  displayView=0; // Startskjermbilde
+  displayView=1; // Startskjermbilde
 
   
   stringPos = 0; // teller for inkomne tegn i XML
@@ -160,8 +160,8 @@ if(loopCounter==0){
 /* --------- Weather data ------------ */
 
   const char* host = "www.yr.no";
-  String url = "/place/Norway/Oslo/Oslo/Etterstad/varsel.xml"; // Bytt ut med din lokasjon
-  url = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel.xml"; // Bytt ut med din lokasjon
+  String url = "/place/Norway/Oslo/Oslo/Oppsal/varsel.xml"; // Bytt ut med din lokasjon
+
 
   displayInfo("connecting to ",1,0);
   displayInfo(host,1,0);
@@ -355,8 +355,8 @@ const char* host3 = "api.met.no";
 host3 = host;
 String url3 = "/weatherapi/nowcast/0.9/?lat=60.10;lon=9.58";
 url3 = "/sted/Norge/Finnmark/Vardø/Vardø/varsel_nu.xml";
-url3 = "/place/Norway/Oslo/Oslo/Etterstad/varsel_nu.xml";
-url3 = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel_nu.xml";
+url3 = "/place/Norway/Oslo/Oslo/Oppsal/varsel_nu.xml";
+//url3 = "/place/Norway/Oslo/Oslo/Norsk%20Rikskringkasting/varsel_nu.xml";
 //url3 = "/ver/sample.xml";
 
 if (!client.connect(host3, httpPort)) {
@@ -456,7 +456,6 @@ while(client.available()){
 // 3 sekunder x 200 = 10 minutter. Oppdater med data fra yr hvert 10. minutt. 
   
   display.clearDisplay();
-  
 
   if(displayView==1){
     display.setTextSize(2);
