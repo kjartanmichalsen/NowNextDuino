@@ -134,7 +134,7 @@ void setup() {
    
     // Koble til med wifi-manager
    
-    displayInfo("Koble til wifi espYR og 192.168.244.1     i nettleser",1,0);
+    displayInfo("Koble til wifi espYR og 192.168.244.1     i nettleser",1,0); //192.168.4.1 depending on library version
     wifiManager.autoConnect("espYR");
 }
 
